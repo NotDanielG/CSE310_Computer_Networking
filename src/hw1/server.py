@@ -1,11 +1,12 @@
 import socket
 import struct
+import _thread
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverIP = "127.0.0.1"
 port = 2000
 serverSocket.bind((serverIP, port))
-serverSocket.listen(1)
+serverSocket.listen(5)
 connection = None
 print("Ready to receive")
 
@@ -32,18 +33,16 @@ def handle_client_message(msg):  # Handles the different number of cases
     return msg
 
 
-while True:
-    print("Waiting for connection...")
-
-    connection, address = serverSocket.accept()
+def process(conn, addr):
     try:
         run = True
+        print("Connection Found:", addr)
         while run:  # run boolean when user wants to end connection
-            message = connection.recv(257)  # Size of 257, 1 for message type and length, 255 for message
+            message = conn.recv(257)  # Size of 257, 1 for message type and length, 255 for message
             if len(message.decode()) != 0:
                 length = message[1]  # Get character length of the message
                 message = struct.unpack('cB{}s'.format(length), message)  # Using length to unpack the struct
-                print("Client Message Received")
+                print("Client Message Received From:", addr)
                 print("Client Message Type:", message[0].decode())
                 print("Client Message Length:", length)
                 print("Client Message:", message[2].decode())
@@ -57,11 +56,18 @@ while True:
                     run = False
 
                 message = struct.pack('cB{}s'.format(len(message)), "R".encode(), len(message), message.encode())
-                connection.send(message)
+                conn.send(message)
 
                 print("Message Sent to Client")
                 if not run:  # Ends connection to client and stops loop
-                    connection.close()
+                    conn.close()
                 print("\n")
     finally:
-        connection.close()
+        conn.close()
+
+
+while True:
+    print("Waiting for connection...")
+    connection, address = serverSocket.accept()
+    _thread.start_new_thread(process, (connection, address))
+
