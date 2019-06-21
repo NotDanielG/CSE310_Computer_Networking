@@ -68,6 +68,6 @@ def process(conn, addr):
 
 while True:
     print("Waiting for connection...")
-    connection, address = serverSocket.accept()
-    _thread.start_new_thread(process, (connection, address))
+    connection, address = serverSocket.accept()  # Code stops here until another client wants to accept
+    _thread.start_new_thread(process, (connection, address))  # Starts new thread to handle client input
 
